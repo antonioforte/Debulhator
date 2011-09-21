@@ -28,8 +28,11 @@ class AppDefaults():
             'Docks/RightDockTabPosition': QtGui.QTabWidget.North,
             'Docks/BottomDockTabPosition': QtGui.QTabWidget.West,
 
+            'SourceBrowser/ShowHtml_XmlAtributtes': False,
+
             # Editor settings
             'Editor/SyntaxTheme':'default',
+            'Editor/AutoComplete': 'APIs',
             'Editor/AutoIndent': True,
             'Editor/BraceMatchMode': 2,
             'Editor/CaretLineVisible': True,

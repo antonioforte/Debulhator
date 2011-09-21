@@ -5,7 +5,7 @@ from PyQt4 import QtGui
 import file_explorer
 import favourites
 import preferences
-
+import outliners.outliner
 
 class DockWidget(QtGui.QDockWidget):
     def __init__(self, title, mother, parent=None):
@@ -69,7 +69,7 @@ class LeftDockChildWidget(QtGui.QWidget):
         explorer = file_explorer.FileExplorer('FileExplorer')
         favourites_ = favourites.Favourites('Favourites')
         self.tabs.addTab(explorer, 'File Browser')
-        self.tabs.addTab(favourites_, 'Bookmarks')
+        self.tabs.addTab(favourites_, 'Favourites')
 
 
 
@@ -79,6 +79,7 @@ class RightDockChildWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         prefs = preferences.Preferences()
+        outliner = outliners.outliner.Outliner(self)
 
         mainLayout = QtGui.QGridLayout()
         mainLayout.setContentsMargins(1, 1, 1, 1)
@@ -94,7 +95,7 @@ class RightDockChildWidget(QtGui.QWidget):
         mainLayout.addWidget(self.tabs)
         self.setLayout(mainLayout)
 
-        self.tabs.addTab(QtGui.QPlainTextEdit(), 'Right 1')
+        self.tabs.addTab(outliner, 'Outliner')
         self.tabs.addTab(QtGui.QPlainTextEdit(), 'Right 2')
         self.tabs.currentChanged.connect(self.tabSelected)
      

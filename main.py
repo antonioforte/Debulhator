@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys, os
 from xml.etree import ElementTree as ET
+import time
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -68,7 +69,8 @@ class MainWindow(QtGui.QMainWindow):
         self.create_actions()
         self.create_toolbars()
         self.create_menus()
-        
+        self.create_shortcuts()
+
 
 ###############################################################################
 ## Get initial settings
@@ -124,17 +126,20 @@ class MainWindow(QtGui.QMainWindow):
                     if not editor.isHidden():
                         self.active_editor = editor
                         self.update_actions()
+                        self.update_source_browser()
             elif len(editors) == 1:
                 self.update_actions_noeditors()
         else:
             self.update_actions()
-            
-       
+            self.update_source_browser()
+      
        
     def update_actions_noeditors(self):
         print('No editors left')
         self.active_editor = None
         self.setWindowTitle(__appname__)
+        
+        self.update_source_browser()
         
         self.act_save.setEnabled(False) 
         self.act_saveas.setEnabled(False) 
@@ -156,7 +161,8 @@ class MainWindow(QtGui.QMainWindow):
         self.act_zoomout.setEnabled(False)
         
         self.act_togglewhitespace.setEnabled(False)
-
+        self.act_foldall.setEnabled(False)
+        
         self.act_next_bookmark.setEnabled(False)
         self.act_previous_bookmark.setEnabled(False)
         self.act_delete_bookmarks.setEnabled(False)
@@ -166,13 +172,12 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def update_actions(self):
-        print('Updating actions')
         text_edit = self.get_active_textedit()
         text_edit.setFocus()
         self.setWindowTitle(text_edit.currentfile+' - '+__appname__)
         
         self.act_save.setEnabled(text_edit.isModified()) 
-        self.act_saveas.setEnabled(True) 
+        self.act_saveas.setEnabled(True)
 
         self.act_cut.setEnabled(False)
         self.act_copy.setEnabled(False)
@@ -191,7 +196,9 @@ class MainWindow(QtGui.QMainWindow):
         self.act_zoomout.setEnabled(True)
         
         self.act_togglewhitespace.setEnabled(True)
-
+        self.act_foldall.setEnabled(True)
+        
+        # Bookmarks actions
         active_textedit = self.get_active_textedit()
         if len(active_textedit.bookmarks.keys()) == 0:
             self.act_next_bookmark.setEnabled(False)
@@ -203,6 +210,7 @@ class MainWindow(QtGui.QMainWindow):
             self.act_delete_bookmarks.setEnabled(True)
         
         self.deal_with_saveall_act()
+
 
 ###############################################################################
 ## Drag and Drops
@@ -423,7 +431,7 @@ class MainWindow(QtGui.QMainWindow):
         if fileurl:
             self.save_file(fileurl)
             self.write_lastdir_visited(fileurl)
-
+            
 
 
     def save_all(self):
@@ -466,9 +474,11 @@ class MainWindow(QtGui.QMainWindow):
             outfile << self.get_active_textedit().text()
         QtGui.QApplication.restoreOverrideCursor()
         
+        self.update_source_browser('saving')
         self.update_save_status(fileurl, text_edit)
         self.refresh_recent_files(fileurl)
         self.statusBar().showMessage("File saved : "+fileurl, 2000)
+        self.update_actions()
         print('Saving file',  fileurl)
         return True
        
@@ -579,6 +589,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
 
+
     def write_lastdir_visited(self, fileurl):
         filedir = QtCore.QFileInfo(fileurl).absolutePath()
         self.prefs.set_setting('Recent/LastDirVisited', filedir)
@@ -632,17 +643,18 @@ class MainWindow(QtGui.QMainWindow):
             active_text_edit = self.get_active_textedit()
             active_text_edit.hide()
             active_text_edit.deleteLater()
+            print('Deleting active text edit and loading file',fileurl)
 
         combobox = self.get_active_combobox()
         combobox.addItem(self.get_filename(fileurl))
         
-        print('Deleting active text edit and loading file',fileurl)
         active_stack = self.get_active_stackwidget()
         newtab = lib.text_edit.TextEdit(False, fileurl, inf.readAll())
         active_stack.addWidget(newtab)
         self.refresh_recent_files(fileurl)
         self.show_laststack()
         self.get_active_textedit().lines_changed()
+        self.update_source_browser()
         
 
 
@@ -715,7 +727,37 @@ class MainWindow(QtGui.QMainWindow):
 ###############################################################################
 
 
+    def auto_complete(self):
+        '''Auto complete characters written in the Text Edit'''
+        if self.active_editor == None:
+            return
+        active_textedit = self.get_active_textedit()
+        setting = self.prefs.get_setting('Editor/AutoComplete', 'APIs')
+        
+        if setting == 'APIs':
+            active_textedit.autoCompleteFromAPIs()  
+        elif setting == 'Document':
+            active_textedit.autoCompleteFromDocument()
+        elif setting == 'All':
+            active_textedit.autoCompleteFromAll()
+
+
+
+    def toggle_wordwrap(self):
+        '''Toggle word wrap on or off'''
+        if self.active_editor == None:
+            return  
+        active_textedit = self.get_active_textedit()
+        wrap_mode = active_textedit.wrapMode()
+        if wrap_mode == 0:
+            active_textedit.setWrapMode(active_textedit.WrapWord) 
+        else:
+            active_textedit.setWrapMode(active_textedit.WrapNone) 
+            
+            
+
     def fold_all(self):
+        '''Toggle fold all'''
         if self.active_editor == None:
             return
         active_textedit = self.get_active_textedit()
@@ -767,12 +809,16 @@ class MainWindow(QtGui.QMainWindow):
         self.findmenu = self.menuBar().addMenu(self.tr("&Find"))
         self.findmenu.addAction(self.act_foldall)
 
+        # Source menu
         self.sourcemenu = self.menuBar().addMenu(self.tr("&Source"))
         self.sourcemenu.addAction(self.act_commentcode)
         self.sourcemenu.addAction(self.act_uncommentcode)
         self.sourcemenu.addAction(self.act_streamcommentcode)
+        self.sourcemenu.addSeparator()
         self.sourcemenu.addAction(self.act_togglewhitespace)
+        self.sourcemenu.addAction(self.act_wordwrap)
         
+        # Window menu
         self.windowmenu = self.menuBar().addMenu(self.tr("&Window"))
         self.windowmenu.addAction(self.act_split_v_screen)
         self.windowmenu.addAction(self.act_split_h_screen)
@@ -947,6 +993,12 @@ class MainWindow(QtGui.QMainWindow):
         self.act_togglewhitespace.setStatusTip(self.tr("Toggle whitespace"))
         self.act_togglewhitespace.triggered.connect(self.toggle_whitespace)
 
+        # Toggle word wrap
+        self.act_wordwrap = QtGui.QAction(self.tr("&Toggle word wrap"), self)
+        self.act_wordwrap.setShortcut(self.tr("Shift+Ctrl+3"))
+        self.act_wordwrap.setStatusTip(self.tr("Toggle word wrap"))
+        self.act_wordwrap.triggered.connect(self.toggle_wordwrap)
+
         # About
         self.act_about = QtGui.QAction(self.tr("&About"), self)
         self.act_about.setStatusTip(self.tr("Show the application's About box"))
@@ -1055,12 +1107,60 @@ class MainWindow(QtGui.QMainWindow):
         self.act_delete_bookmarks.setEnabled(False)
         
         self.act_togglewhitespace.setEnabled(False)
-        
-        
+        self.act_foldall.setEnabled(False)
+
+
+
+    def create_shortcuts(self):
+        '''Create keyboard shortcuts to the application'''
+        self.sh_ctrl_space = QtGui.QShortcut(\
+                                 QtGui.QKeySequence("Ctrl+Space"),self)
+        self.sh_ctrl_space.activated.connect(self.auto_complete)
+
+
+
 ###############################################################################
 ## Common
 ###############################################################################
+
+
+    def outliner_update_tree(self):
+        '''Update source browser tree'''
+        outliner = self.findChild(QtGui.QWidget, 'Outliner')
+        active_textedit = self.get_active_textedit()
+        file = active_textedit.currentfile
+
+        outliner.update_tree(file)
         
+        
+
+    def update_source_browser(self, reason=None):
+        '''Update source browser'''
+        outliner = self.findChild(QtGui.QWidget, 'Outliner')
+        if self.active_editor != None:
+            active_textedit = self.get_active_textedit()
+            file = active_textedit.currentfile
+            outliner_file = outliner.file 
+
+            if outliner_file != file or reason == 'saving':
+                # Give single shot after 1 second
+                # because when saving, the file is in use and 
+                # ctags reads an empty file 
+                QtCore.QTimer.singleShot(1000, self.outliner_update_tree)
+        else:
+            outliner.update_tree('nofile')
+
+
+
+    def keyPressEvent(self, event):
+        '''This method does not need to be instanciated
+        because self is a MainWindow.
+        MainWindow looks for a keyPressEvent method'''
+        if event.key() == QtCore.Qt.Key_X:
+            self.showFullScreen()
+        if event.key() == QtCore.Qt.Key_C:
+            self.showNormal()
+
      
     def isactive_textedit_virgin(self):
         is_virgin = False 

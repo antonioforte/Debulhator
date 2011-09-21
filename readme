@@ -1,14 +1,20 @@
 Hello world.
 
-This is a humble text editor built with pyqt aand the scintilla bindings.
-
-It is not functional yet.
+This is a humble text editor built with pyqt and the scintilla bindings.
+Also this is a first project by me.
+Please use with care.
 
 Stay tuned.
 
 :) 
 
 
+
+
 Execute with python main.py
 
 
+TODO:
+    - CSS comments color
+	- Make dark color theme
+	- Write apis for various languages

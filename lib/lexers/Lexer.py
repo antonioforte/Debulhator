@@ -2,7 +2,7 @@
 from PyQt4 import QtGui
 
 import lib.preferences
-
+import lib.apis.api_manager
 
 
 class Lexer():
@@ -11,8 +11,10 @@ class Lexer():
         self.prefs = lib.preferences.Preferences()
         self.global_styles = self.prefs.global_styles
         self.lexer_style = self.prefs.langs_styles[language]
-
         
+        self.apis = lib.apis.api_manager.Apis(language)
+        self.api_words = self.apis.get_words()
+    
         
     def get_default_font(self):
         font = QtGui.QFont()
@@ -32,7 +34,8 @@ class Lexer():
         try:
             color = self.lexer_style[str(style)]['fgColor']
         except Exception as e:
-            print("Warning get style fg color. ", style, str(description))
+            #print("Warning get style fg color. ", style, str(description))
+            pass
         return color
         
 
@@ -42,7 +45,8 @@ class Lexer():
         try:
             color = self.lexer_style[str(style)]['bgColor']
         except Exception as e:
-            print("Warning get style bg color. ", style, str(description))
+            #print("Warning get style bg color. ", style, str(description))
+            pass
         return color
 
 

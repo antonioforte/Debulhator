@@ -37,8 +37,7 @@ class SplitScreen(QtCore.QObject):
 
 
     def splitScreen(self, typeOfSplitter, orientation):
-        pass
-#        # todo : provide suitable size 
+        # todo : provide suitable size 
         self.parent.newfile_n += 1
         newfilename = 'new '+str(self.parent.newfile_n)
 

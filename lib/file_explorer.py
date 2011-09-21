@@ -211,8 +211,9 @@ class FileExplorer(QtGui.QWidget):
         if main.active_editor != None:
             active_textedit = main.get_active_textedit()
             folder = QtCore.QFileInfo(active_textedit.currentfile).absoluteDir()
+
             if folder.exists():
-                self.currentindex = self.model.index(folder.path())
+                self.currentindex = self.model.index(folder.absolutePath())
                 self.tree.setRootIndex(self.proxii.mapFromSource(self.currentindex))
 
 
@@ -245,9 +246,10 @@ class FileExplorer(QtGui.QWidget):
         
         self.gohome_act = QtGui.QAction(self.tr("&Home"), self)
         self.gohome_act.setIcon(QtGui.QIcon(":/png/explorer-home.png"))
+        self.gohome_act.setStatusTip(self.tr("Go to home dir"))
         self.gohome_act.triggered.connect(self.go_home)
         
-        self.godoc_path_act = QtGui.QAction(self.tr("&Home"), self)
+        self.godoc_path_act = QtGui.QAction(self.tr("&Go to document path"), self)
         self.godoc_path_act.setIcon(QtGui.QIcon(":/png/explorer-go-doc-path.png"))
         self.godoc_path_act.setStatusTip(self.tr("Go to document path"))
         self.godoc_path_act.triggered.connect(self.go_doc_path)

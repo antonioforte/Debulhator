@@ -37,8 +37,7 @@ class Main:
 
 
     def create_qrc(self):
-        qrc = ET.fromstring('''
-        <RCC></RCC>''')
+        qrc = ET.fromstring('''<RCC></RCC>''')
         node = ET.SubElement(qrc, 'qresource')
 
         for root, dirs, files in os.walk(unicode(self.png_folder)):
@@ -59,11 +58,6 @@ class Main:
             proc = subprocess.call(cmd)
         except Exception as e:
             print('Problems pyrcc4 : ',e)
-
-
-
-
-
 
 
     def indent(self, elem, level=0):

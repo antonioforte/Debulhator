@@ -19,6 +19,7 @@ class TextEdit(QsciScintilla):
         
         self.setObjectName('TextEdit')
         self.currentfile = filename
+        self.setUtf8(True)
         self.isnewfile = isnewfile
         self.nedits = 0
         self.bookmarks = {}
@@ -27,7 +28,6 @@ class TextEdit(QsciScintilla):
         self.bookmark = self.markerDefine(QtGui.QPixmap(':/png/bookmark.png'))
         self.prefs = preferences.Preferences()
         self.setIndentationsUseTabs(False)
-        self.setAutoCompletionThreshold(2)
 
         self.copyAvailable.connect(self.enable_copy)
         self.textChanged.connect(self.text_changed)
@@ -42,6 +42,7 @@ class TextEdit(QsciScintilla):
         self.marginClicked.connect(self.on_margin_clicked)
         self.modificationChanged.connect(self.document_was_modified)
         self.linesChanged.connect(self.lines_changed)
+
 
 
     def lines_changed(self):
@@ -70,7 +71,6 @@ class TextEdit(QsciScintilla):
             comboBox.setItemText(index, filename)
             
         mainwindow.update_actions()
-        print('TextEdit isModified()', state)
         
         
         
@@ -82,6 +82,7 @@ class TextEdit(QsciScintilla):
         if _lexer != None:
             self.setLexer(_lexer)
             self.lexer_ = _lexer
+            self.setAutoCompletionThreshold(1)
             print('Language is supported', self.lexer())
         elif _lexer == None:
             print('Language not supported or is plain text')

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from PyQt4.Qsci import QsciLexerPython
 from PyQt4.QtCore import QString
-
+import PyQt4
 import Lexer
 
 
@@ -14,6 +14,12 @@ class LexerPython(QsciLexerPython):
         self.setDefaultPaper(self.lexer.get_globaldefault_paper())
         self.setFont(self.lexer.get_default_font())
         self.setIndentationWarning(QsciLexerPython.Inconsistent)
+        self.apiwords = self.lexer.api_words.split('\n')
+
+        api = PyQt4.Qsci.QsciAPIs(self)
+        for word in self.apiwords:
+            api.add(word)
+        api.prepare()
 
         self.comment_string = QString("#")
         self.stream_comment_string = {
